@@ -418,22 +418,10 @@
       <button type="button" class="class-vocabulary-button" id="class4VocabularyBtn" title="Flip all Class 4 vocabulary to Greek">Class 4 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class5VocabularyBtn" title="Flip all Class 5 vocabulary to Greek">Class 5 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class6VocabularyBtn" title="Flip all Class 6 vocabulary to Greek">Class 6 Vocabulary</button>
+      <button type="button" class="class-vocabulary-button" id="class7VocabularyBtn" title="Flip all Class 7 vocabulary to Greek">Class 7 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="cheatSheetBtn" aria-expanded="false" aria-controls="cheatSheet">cheat sheet</button>
       </div>
-      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 4 to 6" tabindex="0" hidden>
-        <section class="cheat-sheet-class" aria-labelledby="cheatClass4">
-          <h2 id="cheatClass4">Class 4</h2>
-          <ul><li><span lang="grc">θεός</span> — God</li>
-          <li><span lang="grc">κόσμος</span> — world</li>
-          <li><span lang="grc">υἱός</span> — son</li>
-          <li><span lang="grc">ἀδελφός</span> — brother</li>
-          <li><span lang="grc">Ἰησοῦς</span> — Jesus</li>
-          <li><span lang="grc">Χριστός</span> — Christ</li>
-          <li><span lang="grc">θάνατος</span> — death</li>
-          <li><span lang="grc">καί</span> — and; also</li>
-          <li><span lang="grc">ὅτι</span> — that; because</li>
-          <li><span lang="grc">ἐάν</span> — if; when</li></ul>
-        </section>
+      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 5 to 7" tabindex="0" hidden>
         <section class="cheat-sheet-class" aria-labelledby="cheatClass5">
           <h2 id="cheatClass5">Class 5</h2>
           <ul><li><span lang="grc">λόγος</span> — word</li>
@@ -460,6 +448,22 @@
           <li><span lang="grc">πατήρ, πατρός, ὁ</span> — father</li>
           <li><span lang="grc">πνεῦμα, -ατος, τό</span> — spirit</li>
           <li><span lang="grc">ὄνομα, -ατος, τό</span> — name</li></ul>
+        </section>
+        <section class="cheat-sheet-class" aria-labelledby="cheatClass7">
+          <h2 id="cheatClass7">Class 7</h2>
+          <ul><li><span lang="grc">κύριος, -ου, ὁ</span> — Lord</li>
+          <li><span lang="grc">οὐρανός, -ου, ὁ</span> — heaven; sky</li>
+          <li><span lang="grc">νόμος, -ου, ὁ</span> — law</li>
+          <li><span lang="grc">ἄγγελος, -ου, ὁ</span> — angel; messenger</li>
+          <li><span lang="grc">ὄχλος, -ου, ὁ</span> — crowd</li>
+          <li><span lang="grc">δοῦλος, -ου, ὁ</span> — slave</li>
+          <li><span lang="grc">οἶκος, -ου, ὁ</span> — house</li>
+          <li><span lang="grc">εἰμί</span> — I am</li>
+          <li><span lang="grc">εἶ</span> — you are</li>
+          <li><span lang="grc">ἐστί(ν)</span> — he, she, it is</li>
+          <li><span lang="grc">ἐσμέν</span> — we are</li>
+          <li><span lang="grc">ἐστέ</span> — you all are</li>
+          <li><span lang="grc">εἰσί(ν)</span> — they are</li></ul>
         </section>
       </div>
     </nav>
@@ -13026,6 +13030,93 @@ const class6Vocabulary = [
 ];
 document.getElementById('class6VocabularyBtn').addEventListener('click', () => {
   class6Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
+  renderAll();
+});
+
+// Class 7: slide 10, New Vocabulary. Verb matches are limited to the six present indicative forms taught.
+const class7Vocabulary = [
+  {
+    "greek": "κύριος",
+    "english": "Lord",
+    "lemma": "κύριος"
+  },
+  {
+    "greek": "οὐρανός",
+    "english": "heaven; sky",
+    "lemma": "οὐρανός"
+  },
+  {
+    "greek": "νόμος",
+    "english": "law",
+    "lemma": "νόμος"
+  },
+  {
+    "greek": "ἄγγελος",
+    "english": "angel; messenger",
+    "lemma": "ἄγγελος"
+  },
+  {
+    "greek": "ὄχλος",
+    "english": "crowd",
+    "lemma": "ὄχλος"
+  },
+  {
+    "greek": "δοῦλος",
+    "english": "slave",
+    "lemma": "δοῦλος"
+  },
+  {
+    "greek": "οἶκος",
+    "english": "house",
+    "lemma": "οἶκος"
+  },
+  {
+    "greek": "εἰμί",
+    "english": "I am",
+    "lemma": "εἰμί",
+    "morph": "VPAI1S"
+  },
+  {
+    "greek": "εἶ",
+    "english": "you are",
+    "lemma": "εἰμί",
+    "morph": "VPAI2S"
+  },
+  {
+    "greek": "ἐστί(ν)",
+    "english": "he, she, it is",
+    "lemma": "εἰμί",
+    "morph": "VPAI3S"
+  },
+  {
+    "greek": "ἐσμέν",
+    "english": "we are",
+    "lemma": "εἰμί",
+    "morph": "VPAI1P"
+  },
+  {
+    "greek": "ἐστέ",
+    "english": "you all are",
+    "lemma": "εἰμί",
+    "morph": "VPAI2P"
+  },
+  {
+    "greek": "εἰσί(ν)",
+    "english": "they are",
+    "lemma": "εἰμί",
+    "morph": "VPAI3P"
+  }
+];
+class7Vocabulary.forEach(word => {
+  const strongs = new Set();
+  verses.forEach(verse => verse.slots.forEach(slot => slot.greek.forEach(g => {
+    if (g.lemma.normalize('NFC') === word.lemma.normalize('NFC') &&
+        (!word.morph || g.morph.replace(/-/g, '') === word.morph)) strongs.add(g.strong);
+  })));
+  word.strongs = [...strongs];
+});
+document.getElementById('class7VocabularyBtn').addEventListener('click', () => {
+  class7Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
   renderAll();
 });
 

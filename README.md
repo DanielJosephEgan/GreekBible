@@ -7,8 +7,8 @@ Website: https://danieljosephegan.github.io/GreekBible/
 ## Features
 
 - Click English words to reveal Greek. Matching Strong's identifiers are selected throughout the reader.
-- Class 4, Class 5, and Class 6 vocabulary buttons reveal the corresponding words.
-- A compact, sticky cheat sheet displays the three class vocabulary lists.
+- Class 4, Class 5, Class 6, and Class 7 vocabulary buttons reveal the corresponding words.
+- A compact, sticky cheat sheet displays the latest three class vocabulary lists (Classes 5–7).
 - Book and chapter dropdowns, dictionary forms, vocabulary sorting, and per-verse percentages.
 - Douay-Rheims English reference with a hide option.
 
