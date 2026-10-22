@@ -6,8 +6,10 @@ Website: https://danieljosephegan.github.io/GreekBible/
 
 ## Features
 
-- Click English words to reveal Greek. Matching Strong's identifiers are selected throughout the reader.
-- Class 4, Class 5, Class 6, and Class 7 vocabulary buttons reveal the corresponding words.
+- Class 4–7 vocabulary buttons cycle through Not started (English), Learning (blue Greek), and Known (green Greek).
+- Words shared with a known class stay green. Turning a class off preserves selections supplied by other classes.
+- Click English or blue words to mark them known; click green words to return them to English. Changes apply to matching Strong's identifiers throughout the reader.
+- Verse percentages count known words, excluding words still being learned. Reset all clears class and individual word selections.
 - A compact, sticky cheat sheet displays the latest three class vocabulary lists (Classes 5–7).
 - Book and chapter dropdowns, dictionary forms, vocabulary sorting, and per-verse percentages.
 - Douay-Rheims English reference with a hide option.

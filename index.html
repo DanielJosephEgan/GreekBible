@@ -326,7 +326,7 @@
     cursor: pointer;
   }
   .class-vocabulary-button:hover { background: var(--paper-2); }
-  .class-vocabulary-button[aria-pressed="true"] {
+  .class-vocabulary-button[data-study-state="known"] {
     background: var(--sage-bg-strong);
     border-color: var(--ink-soft);
   }
@@ -380,6 +380,16 @@
   .cheat-sheet [lang="grc"] { font-family: "Noto Serif", Georgia, serif; }
   .cheat-sheet:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
   .verse-block { scroll-margin-top: var(--reading-header-height, 180px); }
+  .class-vocabulary-button[data-study-state="learning"],
+  .word.revealed.related.learning {
+    background: #dceefa;
+    color: #193e56;
+    border-color: #729eb9;
+  }
+  .class-vocabulary-status { display: block; font-size: 11px; margin-top: 3px; }
+  .study-legend { font-size: 11px; color: var(--ink-soft); margin: 4px 0 0; flex-basis: 100%; }
+  .legend-learning { background: #dceefa; color: #193e56; padding: 2px 5px; border-radius: 3px; }
+  .legend-known { background: var(--sage-bg-strong); color: var(--ink); padding: 2px 5px; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -424,6 +434,7 @@
       <button type="button" class="class-vocabulary-button" id="class6VocabularyBtn" title="Flip all Class 6 vocabulary to Greek">Class 6 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class7VocabularyBtn" title="Flip all Class 7 vocabulary to Greek">Class 7 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="cheatSheetBtn" aria-expanded="false" aria-controls="cheatSheet">cheat sheet</button>
+      <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → Not started. Percentages count known words.</p>
       </div>
       <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 5 to 7" tabindex="0" hidden>
         <section class="cheat-sheet-class" aria-labelledby="cheatClass5">
@@ -479,10 +490,10 @@
     <div id="verses"></div>
 
     <p class="hint">
-      Click a word to learn it. <span class="swatch"></span>Every other spot using that
-      same Strong's number, in every verse on this page, flips to Greek too. Click any of
-      them again to forget it everywhere. A dash (&mdash;) means that Greek word has no
-      English word of its own here. The percent counts every Greek word in the verse.
+      Blue Greek words are being learned; green words are known. Click a blue word to mark it known,
+      or a green word to return it to English. Click an English word to mark it known.
+      Each change applies to the same Greek vocabulary word throughout the page.
+      Known classes keep shared words green. A dash (—) means that Greek word has no English word of its own here.
     </p>
     <p class="hint" style="font-size: 11px; margin-top: 2rem;">
       Greek word data: <a href="https://github.com/sixcore-droid/interlinear-data" target="_blank" rel="noopener noreferrer">sixcore-droid/interlinear-data</a>,
@@ -12536,7 +12547,10 @@ const verses = [
 ];
 
 const state = { showLemma: false };
-const knownStrongs = new Set(); // global: once a Strong's number is known, every occurrence flips everywhere
+const knownStrongs = new Set();
+const learningStrongs = new Set();
+const classVocabularyStates = new Map();
+const manualWordStates = new Map();
 
 const versesEl = document.getElementById('verses');
 const lemmaToggle = document.getElementById('lemmaToggle');
@@ -12553,8 +12567,10 @@ function knownGreekWords(verse) {
   verse.slots.forEach(s => { s.greek.forEach(g => { if (knownStrongs.has(g.strong)) n++; }); });
   return n;
 }
-function isKnown(slot) {
-  return slot.greek.some(g => knownStrongs.has(g.strong));
+function wordStatus(slot) {
+  if (slot.greek.some(g => learningStrongs.has(g.strong))) return 'learning';
+  if (slot.greek.some(g => knownStrongs.has(g.strong))) return 'known';
+  return 'off';
 }
 
 function chapterOf(ref) {
@@ -12598,23 +12614,24 @@ function renderVerse(verse) {
   function update() {
     verseP.innerHTML = '';
     verse.slots.forEach((slot, i) => {
-      const known = isKnown(slot);
+      const status = wordStatus(slot);
+      const revealed = status !== 'off';
 
       const span = document.createElement('span');
-      span.className = 'word' + (known ? ' revealed related' : '');
+      span.className = 'word' + (revealed ? ' revealed related ' + status : '');
       span.tabIndex = 0;
       span.setAttribute('role', 'button');
-      span.setAttribute('aria-pressed', String(known));
+      span.setAttribute('aria-pressed', status === 'learning' ? 'mixed' : String(revealed));
 
-      const label = known
+      const label = revealed
         ? slot.greek.map(g => state.showLemma ? g.lemma : g.greek).join(' ')
         : slot.english;
       span.textContent = label;
 
-      if (known) {
+      if (revealed) {
         const tip = document.createElement('span');
         tip.className = 'tip';
-        tip.textContent = slot.greek.map(g => g.morph + ' \u00b7 ' + g.strong).join('  /  ');
+        tip.textContent = (status === 'learning' ? 'Learning' : 'Known') + ' · ' + slot.english + ' · ' + slot.greek.map(g => g.morph + ' \u00b7 ' + g.strong).join('  /  ');
         span.appendChild(tip);
         span.setAttribute('aria-label', label);
       } else {
@@ -12622,13 +12639,10 @@ function renderVerse(verse) {
       }
 
       span.addEventListener('click', () => {
-        // Toggle every Strong's number this slot uses. If it's already known,
-        // learning it again means forgetting it everywhere it appears.
-        const nowKnown = !isKnown(slot);
-        slot.greek.forEach(g => {
-          if (nowKnown) knownStrongs.add(g.strong);
-          else knownStrongs.delete(g.strong);
-        });
+        // A blue word becomes known; a green word returns to English everywhere.
+        const next = wordStatus(slot) === 'known' ? 'off' : 'known';
+        slot.greek.forEach(g => manualWordStates.set(g.strong, next));
+        rebuildVocabularyState();
         renderAll();
       });
       span.addEventListener('keydown', (e) => {
@@ -12650,6 +12664,7 @@ function renderVerse(verse) {
     const total = totalGreekWords(verse);
     const knownCount = knownGreekWords(verse);
     pct.textContent = Math.round((knownCount / total) * 100) + '%';
+    pct.title = 'Greek words marked Known; blue Learning words are not counted yet.';
   }
 
   update();
@@ -13121,22 +13136,50 @@ document.getElementById('class7VocabularyBtn').addEventListener('click', () => {
   toggleClassVocabulary(class7Vocabulary);
 });
 
-function toggleClassVocabulary(vocabulary) {
-  const strongs = [...new Set(vocabulary.flatMap(word => word.strongs))];
-  const turnOff = strongs.length > 0 && strongs.every(strong => knownStrongs.has(strong));
-  strongs.forEach(strong => {
-    if (turnOff) knownStrongs.delete(strong);
-    else knownStrongs.add(strong);
+function vocabularyClasses() {
+  return [class4Vocabulary, class5Vocabulary, class6Vocabulary, class7Vocabulary];
+}
+
+function rebuildVocabularyState() {
+  knownStrongs.clear();
+  learningStrongs.clear();
+  vocabularyClasses().forEach(vocabulary => {
+    const status = classVocabularyStates.get(vocabulary) || 'off';
+    vocabulary.forEach(word => word.strongs.forEach(strong => {
+      if (status === 'known') knownStrongs.add(strong);
+      else if (status === 'learning') learningStrongs.add(strong);
+    }));
   });
+  // A word covered by any known class stays green, even when another class is learning it.
+  knownStrongs.forEach(strong => learningStrongs.delete(strong));
+  manualWordStates.forEach((status, strong) => {
+    learningStrongs.delete(strong);
+    if (status === 'known') knownStrongs.add(strong);
+    else knownStrongs.delete(strong);
+  });
+}
+
+function toggleClassVocabulary(vocabulary) {
+  const current = classVocabularyStates.get(vocabulary) || 'off';
+  const next = {off: 'learning', learning: 'known', known: 'off'}[current];
+  classVocabularyStates.set(vocabulary, next);
+  // Explicitly choosing a class state reapplies it to that class's words.
+  vocabulary.forEach(word => word.strongs.forEach(strong => manualWordStates.delete(strong)));
+  rebuildVocabularyState();
   renderAll();
 }
 
-// Derive each class indicator from the words currently selected, including manual changes and resets.
 function updateVocabularyButtons() {
-  [class4Vocabulary, class5Vocabulary, class6Vocabulary, class7Vocabulary].forEach((vocabulary, index) => {
-    const strongs = vocabulary.flatMap(word => word.strongs);
-    const selected = strongs.length > 0 && strongs.every(strong => knownStrongs.has(strong));
-    document.getElementById('class' + (index + 4) + 'VocabularyBtn').setAttribute('aria-pressed', String(selected));
+  const labels = {off: 'Not started', learning: 'Learning', known: 'Known'};
+  const nextLabels = {off: 'Learning', learning: 'Known', known: 'Not started'};
+  vocabularyClasses().forEach((vocabulary, index) => {
+    const status = classVocabularyStates.get(vocabulary) || 'off';
+    const button = document.getElementById('class' + (index + 4) + 'VocabularyBtn');
+    button.setAttribute('data-study-state', status);
+    button.setAttribute('aria-pressed', status === 'learning' ? 'mixed' : String(status === 'known'));
+    button.setAttribute('aria-label', 'Class ' + (index + 4) + ' Vocabulary: ' + labels[status] + '. Click to set ' + nextLabels[status] + '.');
+    button.title = 'Click to set ' + nextLabels[status];
+    button.innerHTML = 'Class ' + (index + 4) + ' Vocabulary<span class="class-vocabulary-status">' + labels[status] + '</span>';
   });
 }
 updateVocabularyButtons();
@@ -13158,7 +13201,9 @@ if (typeof ResizeObserver !== 'undefined') {
 updateReadingHeaderHeight();
 
 resetBtn.addEventListener('click', () => {
-  knownStrongs.clear();
+  classVocabularyStates.clear();
+  manualWordStates.clear();
+  rebuildVocabularyState();
   renderAll();
 });
 </script>
