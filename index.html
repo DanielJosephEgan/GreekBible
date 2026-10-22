@@ -12871,8 +12871,7 @@ const class4Vocabulary = [
   }
 ];
 document.getElementById('class4VocabularyBtn').addEventListener('click', () => {
-  class4Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
-  renderAll();
+  toggleClassVocabulary(class4Vocabulary);
 });
 
 // Class 5 vocabulary from Greek Reader, including alternate spellings and the form estin.
@@ -12949,8 +12948,7 @@ const class5Vocabulary = [
   }
 ];
 document.getElementById('class5VocabularyBtn').addEventListener('click', () => {
-  class5Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
-  renderAll();
+  toggleClassVocabulary(class5Vocabulary);
 });
 
 // Class 6 vocabulary supplied by the user; Strong's identifiers include inflected and elided forms.
@@ -13034,8 +13032,7 @@ const class6Vocabulary = [
   }
 ];
 document.getElementById('class6VocabularyBtn').addEventListener('click', () => {
-  class6Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
-  renderAll();
+  toggleClassVocabulary(class6Vocabulary);
 });
 
 // Class 7: slide 10, New Vocabulary. Verb matches are limited to the six present indicative forms taught.
@@ -13121,9 +13118,18 @@ class7Vocabulary.forEach(word => {
   word.strongs = [...strongs];
 });
 document.getElementById('class7VocabularyBtn').addEventListener('click', () => {
-  class7Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
-  renderAll();
+  toggleClassVocabulary(class7Vocabulary);
 });
+
+function toggleClassVocabulary(vocabulary) {
+  const strongs = [...new Set(vocabulary.flatMap(word => word.strongs))];
+  const turnOff = strongs.length > 0 && strongs.every(strong => knownStrongs.has(strong));
+  strongs.forEach(strong => {
+    if (turnOff) knownStrongs.delete(strong);
+    else knownStrongs.add(strong);
+  });
+  renderAll();
+}
 
 // Derive each class indicator from the words currently selected, including manual changes and resets.
 function updateVocabularyButtons() {
