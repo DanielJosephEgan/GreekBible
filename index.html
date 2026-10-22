@@ -353,7 +353,7 @@
   .cheat-sheet {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--cheat-sheet-columns, 3), minmax(0, 1fr));
     align-items: start;
     border: 1px solid var(--rule);
     border-radius: 6px;
@@ -361,16 +361,22 @@
     font-size: var(--cheat-sheet-font-size, 11px);
     line-height: 1.35;
   }
-  .cheat-sheet-size {
+  .cheat-sheet-controls {
     grid-column: 1 / -1;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 8px 16px;
     padding: 5px 6px;
     border-bottom: 1px solid var(--rule);
     font-size: 13px;
   }
+  .cheat-sheet-classes, .cheat-sheet-size { display: flex; align-items: center; gap: 8px; }
+  .cheat-sheet-classes { flex-wrap: wrap; }
+  .cheat-sheet-classes label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .cheat-sheet-empty { grid-column: 1 / -1; padding: 8px; margin: 0; }
+  .cheat-sheet [hidden] { display: none; }
   .cheat-sheet-size button {
     width: 32px;
     height: 32px;
@@ -383,7 +389,7 @@
   }
   .cheat-sheet-size button:disabled { opacity: 0.4; cursor: default; }
   .cheat-sheet-class { min-width: 0; }
-  .cheat-sheet-class + .cheat-sheet-class { border-left: 1px solid var(--rule); }
+  .cheat-sheet-class:not([hidden]) ~ .cheat-sheet-class:not([hidden]) { border-left: 1px solid var(--rule); }
   .cheat-sheet h2 {
     margin: 0;
     padding: 5px 6px;
@@ -455,14 +461,27 @@
       <button type="button" class="class-vocabulary-button" id="cheatSheetBtn" aria-expanded="false" aria-controls="cheatSheet">cheat sheet</button>
       <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → Not started. Percentages count known words.</p>
       </div>
-      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 5 to 7" tabindex="0" hidden>
+      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 4 to 7" tabindex="0" hidden>
+        <div class="cheat-sheet-controls">
+          <div class="cheat-sheet-classes" role="group" aria-label="Classes shown in cheat sheet">
+            <label><input type="checkbox" data-cheat-class="4" aria-controls="cheatSheetClass4"> Class 4</label>
+            <label><input type="checkbox" data-cheat-class="5" aria-controls="cheatSheetClass5" checked> Class 5</label>
+            <label><input type="checkbox" data-cheat-class="6" aria-controls="cheatSheetClass6" checked> Class 6</label>
+            <label><input type="checkbox" data-cheat-class="7" aria-controls="cheatSheetClass7" checked> Class 7</label>
+          </div>
         <div class="cheat-sheet-size" role="group" aria-label="Cheat sheet text size">
           <span>Size</span>
           <button type="button" id="cheatSheetSmaller" aria-label="Decrease cheat sheet text size">−</button>
           <output id="cheatSheetSizeValue" aria-live="polite">11px</output>
           <button type="button" id="cheatSheetLarger" aria-label="Increase cheat sheet text size">+</button>
         </div>
-        <section class="cheat-sheet-class" aria-labelledby="cheatClass5">
+        </div>
+        <p id="cheatSheetEmpty" class="cheat-sheet-empty" hidden>Choose a class above to show its vocabulary.</p>
+        <section id="cheatSheetClass4" class="cheat-sheet-class" aria-labelledby="cheatClass4" hidden>
+          <h2 id="cheatClass4">Class 4</h2>
+          <ul id="cheatClass4Words"></ul>
+        </section>
+        <section id="cheatSheetClass5" class="cheat-sheet-class" aria-labelledby="cheatClass5">
           <h2 id="cheatClass5">Class 5</h2>
           <ul><li><span lang="grc">λόγος</span> — word</li>
           <li><span lang="grc">ἀντίχριστος</span> — antichrist</li>
@@ -475,7 +494,7 @@
           <li><span lang="grc">οὐ, οὐκ, οὐχ</span> — not</li>
           <li><span lang="grc">ἐστιν</span> — he, she, it is</li></ul>
         </section>
-        <section class="cheat-sheet-class" aria-labelledby="cheatClass6">
+        <section id="cheatSheetClass6" class="cheat-sheet-class" aria-labelledby="cheatClass6">
           <h2 id="cheatClass6">Class 6</h2>
           <ul><li><span lang="grc">ἀγαπητός, -ή, -όν</span> — beloved</li>
           <li><span lang="grc">ὀφθαλμός, -οῦ, ὁ</span> — eye</li>
@@ -489,7 +508,7 @@
           <li><span lang="grc">πνεῦμα, -ατος, τό</span> — spirit</li>
           <li><span lang="grc">ὄνομα, -ατος, τό</span> — name</li></ul>
         </section>
-        <section class="cheat-sheet-class" aria-labelledby="cheatClass7">
+        <section id="cheatSheetClass7" class="cheat-sheet-class" aria-labelledby="cheatClass7">
           <h2 id="cheatClass7">Class 7</h2>
           <ul><li><span lang="grc">κύριος, -ου, ὁ</span> — Lord</li>
           <li><span lang="grc">οὐρανός, -ου, ὁ</span> — heaven; sky</li>
@@ -13212,6 +13231,39 @@ updateVocabularyButtons();
 // The cheat sheet shares the sticky passage header, so it remains visible while reading.
 const cheatSheetBtn = document.getElementById('cheatSheetBtn');
 const cheatSheet = document.getElementById('cheatSheet');
+class4Vocabulary.forEach(word => {
+  const item = document.createElement('li');
+  const greek = document.createElement('span');
+  greek.lang = 'grc';
+  greek.textContent = word.greek;
+  item.append(greek, ' — ' + word.english);
+  document.getElementById('cheatClass4Words').append(item);
+});
+const cheatClassCheckboxes = Array.from(cheatSheet.querySelectorAll('[data-cheat-class]'));
+try {
+  const savedClasses = JSON.parse(localStorage.getItem('greekBible.cheatSheetClasses'));
+  if (Array.isArray(savedClasses) && savedClasses.every(value => ['4', '5', '6', '7'].includes(value))) {
+    cheatClassCheckboxes.forEach(checkbox => { checkbox.checked = savedClasses.includes(checkbox.dataset.cheatClass); });
+  }
+} catch (_) { /* Keep the default classes if preferences cannot be read. */ }
+function updateCheatSheetClasses() {
+  const selected = cheatClassCheckboxes.filter(checkbox => checkbox.checked);
+  cheatClassCheckboxes.forEach(checkbox => {
+    document.getElementById('cheatSheetClass' + checkbox.dataset.cheatClass).hidden = !checkbox.checked;
+  });
+  cheatSheet.style.setProperty('--cheat-sheet-columns', String(Math.max(1, selected.length)));
+  document.getElementById('cheatSheetEmpty').hidden = selected.length !== 0;
+  updateReadingHeaderHeight();
+}
+cheatClassCheckboxes.forEach(checkbox => checkbox.addEventListener('change', () => {
+  updateCheatSheetClasses();
+  try {
+    localStorage.setItem('greekBible.cheatSheetClasses', JSON.stringify(
+      cheatClassCheckboxes.filter(input => input.checked).map(input => input.dataset.cheatClass)
+    ));
+  } catch (_) {}
+}));
+updateCheatSheetClasses();
 const cheatSheetSmaller = document.getElementById('cheatSheetSmaller');
 const cheatSheetLarger = document.getElementById('cheatSheetLarger');
 let cheatSheetFontSize = 11;
