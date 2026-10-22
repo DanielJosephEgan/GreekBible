@@ -358,15 +358,36 @@
     border: 1px solid var(--rule);
     border-radius: 6px;
     background: var(--paper-2);
-    font-size: 11px;
+    font-size: var(--cheat-sheet-font-size, 11px);
     line-height: 1.35;
   }
+  .cheat-sheet-size {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px;
+  }
+  .cheat-sheet-size button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .cheat-sheet-size button:disabled { opacity: 0.4; cursor: default; }
   .cheat-sheet-class { min-width: 0; }
   .cheat-sheet-class + .cheat-sheet-class { border-left: 1px solid var(--rule); }
   .cheat-sheet h2 {
     margin: 0;
     padding: 5px 6px;
-    font-size: 11px;
+    font-size: 1em;
     font-weight: 600;
   }
   .cheat-sheet ul { list-style: none; margin: 0; padding: 0; }
@@ -435,6 +456,12 @@
       <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → Not started. Percentages count known words.</p>
       </div>
       <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 5 to 7" tabindex="0" hidden>
+        <div class="cheat-sheet-size" role="group" aria-label="Cheat sheet text size">
+          <span>Size</span>
+          <button type="button" id="cheatSheetSmaller" aria-label="Decrease cheat sheet text size">−</button>
+          <output id="cheatSheetSizeValue" aria-live="polite">11px</output>
+          <button type="button" id="cheatSheetLarger" aria-label="Increase cheat sheet text size">+</button>
+        </div>
         <section class="cheat-sheet-class" aria-labelledby="cheatClass5">
           <h2 id="cheatClass5">Class 5</h2>
           <ul><li><span lang="grc">λόγος</span> — word</li>
@@ -13185,6 +13212,28 @@ updateVocabularyButtons();
 // The cheat sheet shares the sticky passage header, so it remains visible while reading.
 const cheatSheetBtn = document.getElementById('cheatSheetBtn');
 const cheatSheet = document.getElementById('cheatSheet');
+const cheatSheetSmaller = document.getElementById('cheatSheetSmaller');
+const cheatSheetLarger = document.getElementById('cheatSheetLarger');
+let cheatSheetFontSize = 11;
+try {
+  const savedSize = Number(localStorage.getItem('greekBible.cheatSheetFontSize'));
+  if (Number.isInteger(savedSize) && savedSize >= 10 && savedSize <= 24) cheatSheetFontSize = savedSize;
+} catch (_) { /* Size controls also work when browser storage is unavailable. */ }
+function updateCheatSheetFontSize() {
+  cheatSheet.style.setProperty('--cheat-sheet-font-size', cheatSheetFontSize + 'px');
+  document.getElementById('cheatSheetSizeValue').textContent = cheatSheetFontSize + 'px';
+  cheatSheetSmaller.disabled = cheatSheetFontSize <= 10;
+  cheatSheetLarger.disabled = cheatSheetFontSize >= 24;
+  updateReadingHeaderHeight();
+}
+function changeCheatSheetFontSize(change) {
+  cheatSheetFontSize = Math.max(10, Math.min(24, cheatSheetFontSize + change));
+  updateCheatSheetFontSize();
+  try { localStorage.setItem('greekBible.cheatSheetFontSize', String(cheatSheetFontSize)); } catch (_) {}
+}
+cheatSheetSmaller.addEventListener('click', () => changeCheatSheetFontSize(-1));
+cheatSheetLarger.addEventListener('click', () => changeCheatSheetFontSize(1));
+updateCheatSheetFontSize();
 function updateReadingHeaderHeight() {
   document.documentElement.style.setProperty('--reading-header-height', (chapterNavEl.offsetHeight + 16) + 'px');
 }
