@@ -326,6 +326,10 @@
     cursor: pointer;
   }
   .class-vocabulary-button:hover { background: var(--paper-2); }
+  .class-vocabulary-button[aria-pressed="true"] {
+    background: var(--sage-bg-strong);
+    border-color: var(--ink-soft);
+  }
   .class-vocabulary-button:focus-visible {
     outline: 2px solid var(--red);
     outline-offset: 2px;
@@ -12658,6 +12662,7 @@ const updaters = rendered.map(r => r.update);
 let sortMode = 'book'; // 'book' | 'vocabMap' | 'percent'
 function renderAll() {
   updaters.forEach(u => u());
+  updateVocabularyButtons();
   if (sortMode === 'percent') applySort(); // percentages change live, so re-sort every time
 }
 
@@ -13119,6 +13124,16 @@ document.getElementById('class7VocabularyBtn').addEventListener('click', () => {
   class7Vocabulary.forEach(word => word.strongs.forEach(strong => knownStrongs.add(strong)));
   renderAll();
 });
+
+// Derive each class indicator from the words currently selected, including manual changes and resets.
+function updateVocabularyButtons() {
+  [class4Vocabulary, class5Vocabulary, class6Vocabulary, class7Vocabulary].forEach((vocabulary, index) => {
+    const strongs = vocabulary.flatMap(word => word.strongs);
+    const selected = strongs.length > 0 && strongs.every(strong => knownStrongs.has(strong));
+    document.getElementById('class' + (index + 4) + 'VocabularyBtn').setAttribute('aria-pressed', String(selected));
+  });
+}
+updateVocabularyButtons();
 
 // The cheat sheet shares the sticky passage header, so it remains visible while reading.
 const cheatSheetBtn = document.getElementById('cheatSheetBtn');
