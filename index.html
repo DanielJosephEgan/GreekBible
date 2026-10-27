@@ -458,16 +458,18 @@
       <button type="button" class="class-vocabulary-button" id="class5VocabularyBtn" title="Flip all Class 5 vocabulary to Greek">Class 5 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class6VocabularyBtn" title="Flip all Class 6 vocabulary to Greek">Class 6 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class7VocabularyBtn" title="Flip all Class 7 vocabulary to Greek">Class 7 Vocabulary</button>
+      <button type="button" class="class-vocabulary-button" id="class8VocabularyBtn" title="Flip all Class 8 vocabulary to Greek">Class 8 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="cheatSheetBtn" aria-expanded="false" aria-controls="cheatSheet">cheat sheet</button>
       <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → Not started. Percentages count known words.</p>
       </div>
-      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 4 to 7" tabindex="0" hidden>
+      <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 4 to 8" tabindex="0" hidden>
         <div class="cheat-sheet-controls">
           <div class="cheat-sheet-classes" role="group" aria-label="Classes shown in cheat sheet">
             <label><input type="checkbox" data-cheat-class="4" aria-controls="cheatSheetClass4"> Class 4</label>
-            <label><input type="checkbox" data-cheat-class="5" aria-controls="cheatSheetClass5" checked> Class 5</label>
+            <label><input type="checkbox" data-cheat-class="5" aria-controls="cheatSheetClass5"> Class 5</label>
             <label><input type="checkbox" data-cheat-class="6" aria-controls="cheatSheetClass6" checked> Class 6</label>
             <label><input type="checkbox" data-cheat-class="7" aria-controls="cheatSheetClass7" checked> Class 7</label>
+            <label><input type="checkbox" data-cheat-class="8" aria-controls="cheatSheetClass8" checked> Class 8</label>
           </div>
         <div class="cheat-sheet-size" role="group" aria-label="Cheat sheet text size">
           <span>Size</span>
@@ -481,7 +483,7 @@
           <h2 id="cheatClass4">Class 4</h2>
           <ul id="cheatClass4Words"></ul>
         </section>
-        <section id="cheatSheetClass5" class="cheat-sheet-class" aria-labelledby="cheatClass5">
+        <section id="cheatSheetClass5" class="cheat-sheet-class" aria-labelledby="cheatClass5" hidden>
           <h2 id="cheatClass5">Class 5</h2>
           <ul><li><span lang="grc">λόγος</span> — word</li>
           <li><span lang="grc">ἀντίχριστος</span> — antichrist</li>
@@ -523,6 +525,10 @@
           <li><span lang="grc">ἐσμέν</span> — we are</li>
           <li><span lang="grc">ἐστέ</span> — you all are</li>
           <li><span lang="grc">εἰσί(ν)</span> — they are</li></ul>
+        </section>
+        <section id="cheatSheetClass8" class="cheat-sheet-class" aria-labelledby="cheatClass8">
+          <h2 id="cheatClass8">Class 8</h2>
+          <ul id="cheatClass8Words"></ul>
         </section>
       </div>
     </nav>
@@ -13168,7 +13174,21 @@ const class7Vocabulary = [
     "morph": "VPAI3P"
   }
 ];
-class7Vocabulary.forEach(word => {
+// Class 8 vocabulary supplied by the reader. Match inflected words by their dictionary lemma.
+const class8Vocabulary = [
+  { greek: 'ἄνθρωπος, -ου, ὁ', english: 'person; man', lemma: 'ἄνθρωπος' },
+  { greek: 'μαθητής, -οῦ, ὁ', english: 'disciple; student', lemma: 'μαθητής' },
+  { greek: 'οἶνος, -ου, ὁ', english: 'wine', lemma: 'οἶνος' },
+  { greek: 'ζωή, -ῆς, ἡ', english: 'life', lemma: 'ζωή' },
+  { greek: 'ἡμέρα, -ας, ἡ', english: 'day', lemma: 'ἡμέρα' },
+  { greek: 'μαρτυρία, -ας, ἡ', english: 'testimony; witness', lemma: 'μαρτυρία' },
+  { greek: 'μήτηρ, μητρός, ἡ', english: 'mother', lemma: 'μήτηρ' },
+  { greek: 'ὕδωρ, ὕδατος, τό', english: 'water', lemma: 'ὕδωρ' },
+  { greek: 'Φίλιππος', english: 'Philip', lemma: 'Φίλιππος' },
+  { greek: 'Ἰωάννης', english: 'John', lemma: 'Ἰωάννης' },
+  { greek: 'Ναθαναήλ', english: 'Nathanael', lemma: 'Ναθαναήλ' }
+];
+[...class7Vocabulary, ...class8Vocabulary].forEach(word => {
   const strongs = new Set();
   verses.forEach(verse => verse.slots.forEach(slot => slot.greek.forEach(g => {
     if (g.lemma.normalize('NFC') === word.lemma.normalize('NFC') &&
@@ -13179,9 +13199,12 @@ class7Vocabulary.forEach(word => {
 document.getElementById('class7VocabularyBtn').addEventListener('click', () => {
   toggleClassVocabulary(class7Vocabulary);
 });
+document.getElementById('class8VocabularyBtn').addEventListener('click', () => {
+  toggleClassVocabulary(class8Vocabulary);
+});
 
 function vocabularyClasses() {
-  return [class4Vocabulary, class5Vocabulary, class6Vocabulary, class7Vocabulary];
+  return [class4Vocabulary, class5Vocabulary, class6Vocabulary, class7Vocabulary, class8Vocabulary];
 }
 
 function rebuildVocabularyState() {
@@ -13231,18 +13254,18 @@ updateVocabularyButtons();
 // The cheat sheet shares the sticky passage header, so it remains visible while reading.
 const cheatSheetBtn = document.getElementById('cheatSheetBtn');
 const cheatSheet = document.getElementById('cheatSheet');
-class4Vocabulary.forEach(word => {
+[[4, class4Vocabulary], [8, class8Vocabulary]].forEach(([classNumber, vocabulary]) => vocabulary.forEach(word => {
   const item = document.createElement('li');
   const greek = document.createElement('span');
   greek.lang = 'grc';
   greek.textContent = word.greek;
   item.append(greek, ' — ' + word.english);
-  document.getElementById('cheatClass4Words').append(item);
-});
+  document.getElementById('cheatClass' + classNumber + 'Words').append(item);
+}));
 const cheatClassCheckboxes = Array.from(cheatSheet.querySelectorAll('[data-cheat-class]'));
 try {
   const savedClasses = JSON.parse(localStorage.getItem('greekBible.cheatSheetClasses'));
-  if (Array.isArray(savedClasses) && savedClasses.every(value => ['4', '5', '6', '7'].includes(value))) {
+  if (Array.isArray(savedClasses) && savedClasses.every(value => ['4', '5', '6', '7', '8'].includes(value))) {
     cheatClassCheckboxes.forEach(checkbox => { checkbox.checked = savedClasses.includes(checkbox.dataset.cheatClass); });
   }
 } catch (_) { /* Keep the default classes if preferences cannot be read. */ }
