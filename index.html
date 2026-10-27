@@ -416,6 +416,16 @@
   .study-legend { font-size: 11px; color: var(--ink-soft); margin: 4px 0 0; flex-basis: 100%; }
   .legend-learning { background: #dceefa; color: #193e56; padding: 2px 5px; border-radius: 3px; }
   .legend-known { background: var(--sage-bg-strong); color: var(--ink); padding: 2px 5px; border-radius: 3px; }
+  .class-vocabulary-button[data-study-state="priority"],
+  .word.revealed.related.priority, .legend-priority {
+    background: #ffe0b2;
+    color: #713800;
+    border-color: #c57522;
+  }
+  .legend-priority { padding: 2px 5px; border-radius: 3px; }
+  .priority-controls { flex-basis: 100%; font-size: 12px; }
+  .priority-controls[hidden], #showPriorityBtn[hidden] { display: none; }
+  #showPriorityBtn { margin-left: 8px; }
 </style>
 </head>
 <body>
@@ -461,7 +471,11 @@
       <button type="button" class="class-vocabulary-button" id="class7VocabularyBtn" title="Flip all Class 7 vocabulary to Greek">Class 7 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="class8VocabularyBtn" title="Flip all Class 8 vocabulary to Greek">Class 8 Vocabulary</button>
       <button type="button" class="class-vocabulary-button" id="cheatSheetBtn" aria-expanded="false" aria-controls="cheatSheet">cheat sheet</button>
-      <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → Not started. Percentages count known words.</p>
+      <p class="study-legend">Click a class: Not started → <span class="legend-learning">Learning</span> → <span class="legend-known">Known</span> → <span class="legend-priority">Priority</span> → Not started. Percentages count known words.</p>
+      <div id="priorityControls" class="priority-controls" hidden>
+        <span id="prioritySummary" role="status" aria-live="polite"></span>
+        <button type="button" id="showPriorityBtn" class="class-vocabulary-button" hidden>Show priority verses</button>
+      </div>
       </div>
       <div id="cheatSheet" class="cheat-sheet" role="region" aria-label="Vocabulary cheat sheet for Classes 4 to 8" tabindex="0" hidden>
         <div class="cheat-sheet-controls">
@@ -541,10 +555,13 @@
     <div id="verses"></div>
 
     <p class="hint">
-      Blue Greek words are being learned; green words are known. Click a blue word to mark it known,
+      Blue Greek words are being learned; green words are known; orange words are prioritized for study.
+      Priority lessons bring verses with the most matching word occurrences to the top, across all books.
+      Click a blue or orange word to mark it known,
       or a green word to return it to English. Click an English word to mark it known.
       Each change applies to the same Greek vocabulary word throughout the page.
-      Known classes keep shared words green. A dash (—) means that Greek word has no English word of its own here.
+      Known classes keep shared learning words green; priority lessons highlight their words orange.
+      A dash (—) means that Greek word has no English word of its own here.
     </p>
     <p class="hint" style="font-size: 11px; margin-top: 2rem;">
       Greek word data: <a href="https://github.com/sixcore-droid/interlinear-data" target="_blank" rel="noopener noreferrer">sixcore-droid/interlinear-data</a>,
@@ -12607,6 +12624,7 @@ verses.push(...[{"ref":"John 1:1","douay":"In the beginning was the Word: and th
 const state = { showLemma: false };
 const knownStrongs = new Set();
 const learningStrongs = new Set();
+const priorityStrongs = new Set();
 const classVocabularyStates = new Map();
 const manualWordStates = new Map();
 
@@ -12626,6 +12644,7 @@ function knownGreekWords(verse) {
   return n;
 }
 function wordStatus(slot) {
+  if (slot.greek.some(g => priorityStrongs.has(g.strong) && !manualWordStates.has(g.strong))) return 'priority';
   if (slot.greek.some(g => learningStrongs.has(g.strong))) return 'learning';
   if (slot.greek.some(g => knownStrongs.has(g.strong))) return 'known';
   return 'off';
@@ -12677,10 +12696,19 @@ function renderVerse(verse) {
     douay.className += ' reference-only';
   }
 
+  let previousRenderKey = null;
   function update() {
+    const total = totalGreekWords(verse);
+    const knownCount = knownGreekWords(verse);
+    pct.textContent = total ? Math.round((knownCount / total) * 100) + '%' : '';
+    pct.title = 'Greek words marked Known; Learning and Priority alone do not count.';
+    const statuses = verse.slots.map(wordStatus);
+    const renderKey = String(state.showLemma) + ':' + statuses.join(',');
+    if (renderKey === previousRenderKey) return;
+    previousRenderKey = renderKey;
     verseP.innerHTML = '';
     verse.slots.forEach((slot, i) => {
-      const status = wordStatus(slot);
+      const status = statuses[i];
       const revealed = status !== 'off';
 
       const span = document.createElement('span');
@@ -12697,7 +12725,7 @@ function renderVerse(verse) {
       if (revealed) {
         const tip = document.createElement('span');
         tip.className = 'tip';
-        tip.textContent = (status === 'learning' ? 'Learning' : 'Known') + ' · ' + slot.english + ' · ' + slot.greek.map(g => g.morph + ' \u00b7 ' + g.strong).join('  /  ');
+        tip.textContent = ({learning: 'Learning', known: 'Known', priority: 'Priority'}[status]) + ' · ' + slot.english + ' · ' + slot.greek.map(g => g.morph + ' \u00b7 ' + g.strong).join('  /  ');
         span.appendChild(tip);
         span.setAttribute('aria-label', label);
       } else {
@@ -12727,10 +12755,6 @@ function renderVerse(verse) {
       }
     });
 
-    const total = totalGreekWords(verse);
-    const knownCount = knownGreekWords(verse);
-    pct.textContent = total ? Math.round((knownCount / total) * 100) + '%' : '';
-    pct.title = 'Greek words marked Known; blue Learning words are not counted yet.';
   }
 
   update();
@@ -12740,11 +12764,15 @@ function renderVerse(verse) {
 
 const rendered = verses.map(renderVerse);
 const updaters = rendered.map(r => r.update);
-let sortMode = 'book'; // 'book' | 'vocabMap' | 'percent'
+let sortMode = 'book'; // 'book' | 'vocabMap' | 'percent' | 'priority'
+let sortBeforePriority = 'book';
 function renderAll() {
   updaters.forEach(u => u());
   updateVocabularyButtons();
-  if (sortMode === 'percent') applySort(); // percentages change live, so re-sort every time
+  const restoreOrder = sortMode === 'priority' && !priorityStrongs.size;
+  if (restoreOrder) sortMode = sortBeforePriority;
+  if (restoreOrder || sortMode === 'priority' || sortMode === 'percent') applySort();
+  else updatePriorityControls();
 }
 
 // --- Book Language Map: score each verse by how much its vocabulary (by Strong's
@@ -12851,20 +12879,53 @@ function percentSortedBlocks() {
 
 function applySort() {
   let order;
-  if (sortMode === 'vocabMap') order = mapOrderBlocks;
+  if (sortMode === 'priority') order = prioritySortedBlocks();
+  else if (sortMode === 'vocabMap') order = mapOrderBlocks;
   else if (sortMode === 'percent') order = percentSortedBlocks();
   else order = bookOrderBlocks;
   order.forEach(block => versesEl.appendChild(block)); // appendChild on an attached node moves it
   chapterNavEl.style.display = ''; // The reading-options menu remains available in every sort mode.
   document.body.classList.toggle('map-mode', sortMode === 'vocabMap');
-}
-
-function setSortMode(mode) {
-  sortMode = (sortMode === mode) ? 'book' : mode; // clicking the active one turns it back off
   mapToggle.setAttribute('aria-pressed', String(sortMode === 'vocabMap'));
   mapToggle.setAttribute('aria-checked', String(sortMode === 'vocabMap'));
   percentToggle.setAttribute('aria-pressed', String(sortMode === 'percent'));
   percentToggle.setAttribute('aria-checked', String(sortMode === 'percent'));
+  updatePriorityControls();
+}
+
+function priorityMatchCount(verse) {
+  return verse.slots.reduce((count, slot) => count + slot.greek.filter(g => priorityStrongs.has(g.strong)).length, 0);
+}
+
+function prioritySortedBlocks() {
+  return rendered.map((r, i) => ({block: r.block, count: priorityMatchCount(verses[i]), i}))
+    .sort((a, b) => b.count - a.count || a.i - b.i)
+    .map(item => item.block);
+}
+
+function startPrioritySort() {
+  if (sortMode !== 'priority') sortBeforePriority = sortMode;
+  sortMode = 'priority';
+}
+
+function updatePriorityControls() {
+  const classes = vocabularyClasses().map((vocabulary, index) =>
+    classVocabularyStates.get(vocabulary) === 'priority' ? index + 4 : null).filter(n => n !== null);
+  document.getElementById('priorityControls').hidden = classes.length === 0;
+  document.getElementById('prioritySummary').textContent = classes.length
+    ? 'Priority: Class ' + classes.join(', ') + (sortMode === 'priority'
+      ? ' · Most matching words first, across all books.' : ' · Viewing another order.') : '';
+  document.getElementById('showPriorityBtn').hidden = !classes.length || sortMode === 'priority';
+}
+
+document.getElementById('showPriorityBtn').addEventListener('click', () => {
+  startPrioritySort();
+  applySort();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+function setSortMode(mode) {
+  sortMode = (sortMode === mode) ? 'book' : mode; // clicking the active one turns it back off
   applySort();
 }
 
@@ -13226,11 +13287,13 @@ function vocabularyClasses() {
 function rebuildVocabularyState() {
   knownStrongs.clear();
   learningStrongs.clear();
+  priorityStrongs.clear();
   vocabularyClasses().forEach(vocabulary => {
     const status = classVocabularyStates.get(vocabulary) || 'off';
     vocabulary.forEach(word => word.strongs.forEach(strong => {
       if (status === 'known') knownStrongs.add(strong);
       else if (status === 'learning') learningStrongs.add(strong);
+      else if (status === 'priority') priorityStrongs.add(strong);
     }));
   });
   // A word covered by any known class stays green, even when another class is learning it.
@@ -13244,22 +13307,24 @@ function rebuildVocabularyState() {
 
 function toggleClassVocabulary(vocabulary) {
   const current = classVocabularyStates.get(vocabulary) || 'off';
-  const next = {off: 'learning', learning: 'known', known: 'off'}[current];
+  const next = {off: 'learning', learning: 'known', known: 'priority', priority: 'off'}[current];
   classVocabularyStates.set(vocabulary, next);
   // Explicitly choosing a class state reapplies it to that class's words.
   vocabulary.forEach(word => word.strongs.forEach(strong => manualWordStates.delete(strong)));
   rebuildVocabularyState();
+  if (next === 'priority') startPrioritySort();
   renderAll();
+  if (next === 'priority') window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function updateVocabularyButtons() {
-  const labels = {off: 'Not started', learning: 'Learning', known: 'Known'};
-  const nextLabels = {off: 'Learning', learning: 'Known', known: 'Not started'};
+  const labels = {off: 'Not started', learning: 'Learning', known: 'Known', priority: 'Priority'};
+  const nextLabels = {off: 'Learning', learning: 'Known', known: 'Priority', priority: 'Not started'};
   vocabularyClasses().forEach((vocabulary, index) => {
     const status = classVocabularyStates.get(vocabulary) || 'off';
     const button = document.getElementById('class' + (index + 4) + 'VocabularyBtn');
     button.setAttribute('data-study-state', status);
-    button.setAttribute('aria-pressed', status === 'learning' ? 'mixed' : String(status === 'known'));
+    button.setAttribute('aria-pressed', status === 'learning' ? 'mixed' : String(status !== 'off'));
     button.setAttribute('aria-label', 'Class ' + (index + 4) + ' Vocabulary: ' + labels[status] + '. Click to set ' + nextLabels[status] + '.');
     button.title = 'Click to set ' + nextLabels[status];
     button.innerHTML = 'Class ' + (index + 4) + ' Vocabulary<span class="class-vocabulary-status">' + labels[status] + '</span>';

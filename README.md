@@ -6,10 +6,12 @@ Website: https://danieljosephegan.github.io/GreekBible/
 
 ## Features
 
-- Class 4–8 vocabulary buttons cycle through Not started (English), Learning (blue Greek), and Known (green Greek).
-- Words shared with a known class stay green. Turning a class off preserves selections supplied by other classes.
-- Click English or blue words to mark them known; click green words to return them to English. Changes apply to matching Strong's identifiers throughout the reader.
-- Verse percentages count known words, excluding words still being learned. Reset all clears class and individual word selections.
+- Class 4–8 vocabulary buttons cycle through Not started (English), Learning (blue Greek), Known (green Greek), and Priority (orange Greek), then back to Not started.
+- Priority lessons bring verses with the most matching Greek word occurrences to the top across all books. Multiple priority lessons combine without double-counting overlaps; ties retain book order. Turning off the last priority lesson restores the previous order.
+- Choosing a passage or another sorting option pauses priority ordering while keeping orange lesson selections. Use Show priority verses to resume. Reset all clears priority selections too.
+- Words shared with a known class stay green unless they belong to a Priority lesson, which highlights them orange. Turning a class off preserves selections supplied by other classes.
+- Click English, blue, or orange words to mark them known; click green words to return them to English. Changes apply to matching Strong's identifiers throughout the reader. Individual word choices do not change which lesson words determine priority ordering.
+- Verse percentages count known words; Learning or Priority alone do not count. Reset all clears class and individual word selections.
 - A compact, sticky cheat sheet offers selectable Classes 4–8 and text-size controls. Selected classes and text size are remembered in this browser.
 - Book and chapter dropdowns, dictionary forms, vocabulary sorting, and per-verse percentages.
 - Douay-Rheims English reference with a hide option.
